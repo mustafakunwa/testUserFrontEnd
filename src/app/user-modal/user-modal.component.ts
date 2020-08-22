@@ -3,6 +3,7 @@ import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { ApiService } from '../../service/api.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { DomSanitizer } from '@angular/platform-browser';
 
 
 @Component({
@@ -19,7 +20,8 @@ export class UserModalComponent implements OnInit {
     public dialogRef: MatDialogRef<UserModalComponent>,
     @Inject(MAT_DIALOG_DATA) public data: any,
     private ApiService: ApiService,
-    private _snackBar: MatSnackBar) { }
+    private _snackBar: MatSnackBar,
+    private domSanitizer: DomSanitizer) { }
 
   ngOnInit() {
     this.createForm();
@@ -36,13 +38,13 @@ export class UserModalComponent implements OnInit {
       email: this.data.user.email,
       mobileNo: this.data.user.mobileNo,
     })
-    if (this.data.user.avatar) {
-      this.ApiService.getAvatar(this.data.user._id).subscribe(
-        res=>{
-          this.img = res;
-        }
-      )
-     
+    if (this.data.user.avatar && this.data.user.avatar.data) {
+      let TYPED_ARRAY = new Uint8Array(this.data.user.avatar.data);
+      const STRING_CHAR = TYPED_ARRAY.reduce((data, byte) => {
+        return data + String.fromCharCode(byte);
+      }, '');
+      let base64String = btoa(STRING_CHAR);
+      this.img = this.domSanitizer.bypassSecurityTrustUrl('data:image/jpg;base64,' + base64String);
     }
   }
   createForm() {
